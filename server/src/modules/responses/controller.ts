@@ -1,6 +1,5 @@
 import User from "../auth/model.js";
 import Poll from "../polls/model.js";
-import Question from "../questions/model.js";
 import Response from "./model.js";
 
 import { getAuth } from "@clerk/express";
@@ -12,6 +11,8 @@ import { generateAnonymousToken, hashAnonymousToken } from "./utils.js";
 
 import ApiResponse from "../../shared/utils/ApiResponse.js";
 import ApiError from "../../shared/utils/ApiError.js";
+
+import env from "../../shared/config/env.js";
 
 import type { PostResponseSchemaType } from "./schemas.js";
 import type {
@@ -73,7 +74,7 @@ export async function handlePostResponse(
             res.cookie(cookieName, anonymousToken, {
                 httpOnly: true,
                 sameSite: "lax",
-                secure: process.env.NODE_ENV === "production",
+                secure: env.NODE_ENV === "production",
                 maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
             });
         }

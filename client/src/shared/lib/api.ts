@@ -12,6 +12,7 @@ export const api = axios.create({
     baseURL:
         import.meta.env.VITE_SERVER_URL ||
         "https://pollnode-backend.sameerbhagtani.dev",
+    withCredentials: true,
 });
 
 api.interceptors.request.use(async (config) => {

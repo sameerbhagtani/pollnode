@@ -10,8 +10,9 @@ import {
 } from "recharts";
 import { getAnalytics } from "../api";
 import { publishPoll } from "../../polls/api";
+import { getPollById } from "../../polls/api";
 import type { AnalyticsData } from "../types";
-import type { Poll } from "../../polls/types";
+import type { Poll, Question } from "../../polls/types";
 import { useSocket } from "../../../shared/hooks/useSocket";
 import { getApiErrorMessage } from "../../../shared/lib/api";
 import {
@@ -35,6 +36,7 @@ export default function AnalyticsDashboard({
     initialPoll?: Partial<Poll>;
 }) {
     const [data, setData] = useState<AnalyticsData | null>(null);
+    const [pollQuestions, setPollQuestions] = useState<Question[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isPublishing, setIsPublishing] = useState(false);
     const socket = useSocket({ pollId });
@@ -51,15 +53,25 @@ export default function AnalyticsDashboard({
         }
     }, [pollId]);
 
+    const fetchPollDetails = useCallback(async () => {
+        try {
+            const res = await getPollById(pollId);
+            setPollQuestions(res.questions);
+        } catch (err) {
+            console.error("Failed to fetch poll details", err);
+        }
+    }, [pollId]);
+
     useEffect(() => {
         const timer = window.setTimeout(() => {
             void fetchAnalytics();
+            void fetchPollDetails();
         }, 0);
 
         return () => {
             window.clearTimeout(timer);
         };
-    }, [fetchAnalytics]);
+    }, [fetchAnalytics, fetchPollDetails]);
 
     useEffect(() => {
         if (!socket) return;
@@ -116,6 +128,7 @@ export default function AnalyticsDashboard({
 
     const { poll, totalResponses, questions, insights } = data;
     const isPublished = !!poll.publishedAt;
+    const isAuthenticatedPoll = poll.responseAccess === "authenticated";
 
     // Provide defaults if insights is missing initially
     const participation = insights?.participation || {
@@ -168,7 +181,9 @@ export default function AnalyticsDashboard({
             </div>
 
             {!isPublicView && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div
+                    className={`grid grid-cols-1 gap-6 mb-8 ${isAuthenticatedPoll ? "md:grid-cols-2" : "md:grid-cols-3"}`}
+                >
                     <Card>
                         <CardContent className="pt-6">
                             <div className="flex items-center justify-between">
@@ -206,23 +221,26 @@ export default function AnalyticsDashboard({
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">
-                                        Anonymous Ratio
-                                    </p>
-                                    <p className="text-3xl font-bold">
-                                        {participation.anonymous.percentage}%
-                                    </p>
+                    {!isAuthenticatedPoll && (
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                                            Anonymous Ratio
+                                        </p>
+                                        <p className="text-3xl font-bold">
+                                            {participation.anonymous.percentage}
+                                            %
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-secondary rounded-full text-secondary-foreground">
+                                        <Globe className="w-6 h-6" />
+                                    </div>
                                 </div>
-                                <div className="p-3 bg-secondary rounded-full text-secondary-foreground">
-                                    <Globe className="w-6 h-6" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             )}
 
@@ -234,7 +252,27 @@ export default function AnalyticsDashboard({
                                 <span className="text-muted-foreground">
                                     {index + 1}.
                                 </span>
-                                {q.questionText}
+                                <span>{q.questionText}</span>
+                                {(() => {
+                                    const questionMeta = pollQuestions.find(
+                                        (question) =>
+                                            question._id === q.questionId,
+                                    );
+
+                                    if (!questionMeta) {
+                                        return null;
+                                    }
+
+                                    return questionMeta.isRequired ? (
+                                        <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-destructive">
+                                            Required *
+                                        </span>
+                                    ) : (
+                                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            Optional
+                                        </span>
+                                    );
+                                })()}
                             </CardTitle>
                             <CardDescription>
                                 {q.totalAnswers} answer

@@ -85,13 +85,13 @@ export default function HomePage() {
             </section>
 
             {/* Features / Steps Section */}
-            <section className="py-24 bg-muted/30 border-y">
+            <section className="py-24 border-y bg-gradient-to-b from-emerald-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold tracking-tight mb-4">
+                        <h2 className="text-3xl font-bold tracking-tight mb-4 text-slate-900 dark:text-white">
                             How PollNode Works
                         </h2>
-                        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                        <p className="text-slate-600 dark:text-slate-300 text-lg max-w-2xl mx-auto">
                             A seamless experience from creating your first
                             question to analyzing the final results.
                         </p>
@@ -148,15 +148,19 @@ function StepCard({
 }) {
     return (
         <Card
-            className="border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+            className="border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/70 dark:from-slate-900 dark:to-slate-800 dark:border-slate-700/60 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             style={{ animationDelay: `${delay}ms` }}
         >
             <CardContent className="pt-8 text-center flex flex-col items-center">
-                <div className="w-14 h-14 rounded-full bg-background shadow-sm flex items-center justify-center mb-6 border">
+                <div className="w-14 h-14 rounded-full bg-primary/10 text-primary shadow-sm flex items-center justify-center mb-6 border border-primary/10">
                     {icon}
                 </div>
-                <h3 className="text-xl font-semibold mb-3">{title}</h3>
-                <p className="text-muted-foreground">{description}</p>
+                <h3 className="text-xl font-semibold mb-3 text-slate-900 dark:text-white">
+                    {title}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                    {description}
+                </p>
             </CardContent>
         </Card>
     );

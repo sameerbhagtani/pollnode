@@ -175,10 +175,17 @@ export default function PublicPollPage() {
 
     const onSubmit = async (data: Record<string, string>) => {
         try {
-            const answers = Object.keys(data).map((questionId) => ({
-                question: questionId,
-                selectedOption: data[questionId],
-            }));
+            const answers = Object.entries(data)
+                .filter(([, selectedOption]) => Boolean(selectedOption))
+                .map(([questionId, selectedOption]) => ({
+                    question: questionId,
+                    selectedOption,
+                }));
+
+            if (answers.length === 0) {
+                toast.error("Please answer at least one question.");
+                return;
+            }
 
             await submitPollResponse(pollId!, { answers });
             setIsSubmitted(true);
