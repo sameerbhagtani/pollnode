@@ -24,6 +24,17 @@ export function PollCard({
     isPublishing = false,
 }: PollCardProps) {
     const isPublished = !!poll.publishedAt;
+    const isExpired = !isPublished && new Date(poll.expiresAt) < new Date();
+    const statusLabel = isPublished
+        ? "Published"
+        : isExpired
+          ? "Expired"
+          : "Active";
+    const statusClassName = isPublished
+        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+        : isExpired
+          ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
     const publicUrl = `${window.location.origin}/polls/${poll._id}`;
 
     const copyLink = () => {
@@ -39,9 +50,9 @@ export function PollCard({
                         {poll.title}
                     </CardTitle>
                     <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${isPublished ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"}`}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${statusClassName}`}
                     >
-                        {isPublished ? "Published" : "Draft/Active"}
+                        {statusLabel}
                     </span>
                 </div>
                 {poll.description && (

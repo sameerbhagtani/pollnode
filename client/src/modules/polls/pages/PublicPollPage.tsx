@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useForm, Controller } from "react-hook-form";
-import { useAuth } from "@clerk/react";
+import { SignInButton, useAuth } from "@clerk/react";
 import { toast } from "sonner";
+import axios from "axios";
 import { getPollById, submitPollResponse } from "../api";
 import type { PollDetails, Question } from "../types";
 import { useSocket } from "../../../shared/hooks/useSocket";
@@ -25,6 +26,7 @@ export default function PublicPollPage() {
     const [pollData, setPollData] = useState<PollDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [requiresSignIn, setRequiresSignIn] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
 
     const socket = useSocket({
@@ -45,6 +47,16 @@ export default function PublicPollPage() {
                 const data = await getPollById(pollId);
                 setPollData(data);
             } catch (err) {
+                if (
+                    axios.isAxiosError(err) &&
+                    err.response?.status === 403 &&
+                    err.response?.data?.message === "Poll is not public"
+                ) {
+                    setRequiresSignIn(true);
+                    setError(null);
+                    return;
+                }
+
                 setError(getApiErrorMessage(err, "Failed to load poll"));
             } finally {
                 setIsLoading(false);
@@ -99,6 +111,27 @@ export default function PublicPollPage() {
         );
     }
 
+    if (requiresSignIn) {
+        return (
+            <div className="container mx-auto px-4 py-16 text-center max-w-lg">
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                    You should be logged in to answer this poll
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                    Please sign in to access this authenticated poll.
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                    <SignInButton mode="modal">
+                        <Button>Sign In</Button>
+                    </SignInButton>
+                    <Button variant="outline" onClick={() => navigate("/")}>
+                        Return Home
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     if (error) {
         return (
             <div className="container mx-auto px-4 py-16 text-center max-w-lg">
@@ -115,6 +148,7 @@ export default function PublicPollPage() {
 
     const { poll, questions, meta } = pollData;
     const isPublished = !!poll.publishedAt;
+    const isExpired = new Date(poll.expiresAt) < new Date();
     const requiresAuth = poll.responseAccess === "authenticated" && !isSignedIn;
 
     if (requiresAuth) {
@@ -146,6 +180,28 @@ export default function PublicPollPage() {
                 isPublicView={true}
                 initialPoll={poll}
             />
+        );
+    }
+
+    if (isExpired) {
+        return (
+            <div className="container mx-auto px-4 py-16 text-center max-w-lg">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>This poll has expired</CardTitle>
+                        <CardDescription>
+                            The response window has closed, so new answers can
+                            no longer be submitted.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                            If the creator publishes the results, they will
+                            appear here.
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
         );
     }
 
