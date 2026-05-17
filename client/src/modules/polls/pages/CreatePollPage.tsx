@@ -103,7 +103,7 @@ export default function CreatePollPage() {
             setIsSubmitting(true);
             const payload = {
                 title: data.title,
-                description: data.description,
+                description: data.description ? data.description : undefined,
                 responseAccess: data.responseAccess,
                 expiresAt: new Date(data.expiresAt).toISOString(),
                 questions: data.questions.map((q) => ({
